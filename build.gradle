@@ -3,6 +3,7 @@ apply plugin: 'maven'
 
 buildscript {
     repositories {
+	    mavenLocal()
         mavenCentral()
     }
     dependencies {
@@ -18,7 +19,7 @@ repositories {
 
 android {
     compileSdkVersion 19
-    buildToolsVersion "19.0.3"
+	buildToolsVersion '19.1.0'
 
     defaultConfig {
         minSdkVersion 9
@@ -58,6 +59,7 @@ dependencies {
     androidTestCompile 'commons-io:commons-io:2.0.1'
 
     compile project(':cbl:java-core')
+	compile project(':cbl:java-listener')
 
     // temporary workaround to enable running tests against Couchbase Lite Listener.
     // once tests are converted over to use mockwebserver, this can be ripped out.
@@ -65,71 +67,4 @@ dependencies {
     androidTestCompile project(':cbl:java-listener')
 
     androidTestCompile 'com.squareup.okhttp:mockwebserver:1.2.1'
-
-}
-
-task generateJavadocs(type: Javadoc) {
-    source = android.sourceSets.main.java.srcDirs
-    List<File> pathList = new ArrayList<File>();
-    pathList.add(file('extra/doclet/doclet.jar'))
-    options.docletpath = pathList
-    options.doclet = "ExcludeDoclet"
-    options.showFromPublic()
-    exclude "org/apache/http/**", "com/couchbase/touchdb/**"
-}
-
-task createMavenDirectory(type: Exec) {
-
-    ext {
-        uploadUser = System.getenv("MAVEN_UPLOAD_USERNAME") + ":" + System.getenv("MAVEN_UPLOAD_PASSWORD")
-        mkcolPath  = System.getenv("MAVEN_UPLOAD_REPO_URL") + "com/couchbase/lite/couchbase-lite-android/" + System.getenv("MAVEN_UPLOAD_VERSION") + "/"
-    }
-    commandLine "curl", "--user", uploadUser, "-X", "MKCOL", mkcolPath
-}
-
-// this hack is only needed for apache mod_dav based Maven repo's like file.couchbase.com.  otherwise, skip it
-createMavenDirectory.onlyIf { System.getenv("MAVEN_UPLOAD_REPO_URL").contains("files") }
-
-// first create the directory, then do the upload
-task uploadArchivesWrapper(dependsOn: createMavenDirectory) << {
-    uploadArchives.execute()
-}
-
-def mavenPath() {
-    System.getenv("MAVEN_BUILD_LOCAL") == "true" ?
-            'file://' + new File(System.getProperty('user.home'), '.m2/repository').absolutePath :
-            System.getenv("MAVEN_UPLOAD_REPO_URL")
-}
-
-// this will upload, but will not first create a directory (which is needed on some servers)
-uploadArchives {
-    repositories {
-        mavenDeployer {
-            repository(url: mavenPath()) {
-                authentication(userName: System.getenv("MAVEN_UPLOAD_USERNAME"), password: System.getenv("MAVEN_UPLOAD_PASSWORD"))
-            }
-            pom.version = System.getenv("MAVEN_UPLOAD_VERSION")
-            pom.groupId = 'com.couchbase.lite'
-            pom.artifactId = 'couchbase-lite-android'
-            pom.project {
-                licenses {
-                    license {
-                        name 'Couchbase Community Edition License Agreement'
-                        url 'http://www.couchbase.com/agreement/community'
-                        distribution 'repo'
-                    }
-                }
-            }
-        }
-    }
-}
-
-
-task sourcesJar(type: Jar) {
-    classifier = 'sources'
-    from android.sourceSets.main.java.srcDirs
-}
-
-artifacts {
-    archives sourcesJar
 }
