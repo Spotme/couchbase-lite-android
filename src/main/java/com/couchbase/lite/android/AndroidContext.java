@@ -3,6 +3,8 @@ package com.couchbase.lite.android;
 import com.couchbase.lite.Context;
 import com.couchbase.lite.NetworkReachabilityManager;
 
+import net.sqlcipher.database.SQLiteDatabase;
+
 import java.io.File;
 
 public class AndroidContext implements Context {
@@ -12,6 +14,7 @@ public class AndroidContext implements Context {
 
     public AndroidContext(android.content.Context wrappedContext) {
         this.wrappedContext = wrappedContext;
+        loadDatabaseLibraries();
     }
 
     @Override
@@ -34,6 +37,10 @@ public class AndroidContext implements Context {
 
     public android.content.Context getWrappedContext() {
         return wrappedContext;
+    }
+
+    public void loadDatabaseLibraries() {
+        SQLiteDatabase.loadLibs(wrappedContext);
     }
 
 }

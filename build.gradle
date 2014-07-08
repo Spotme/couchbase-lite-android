@@ -61,6 +61,8 @@ dependencies {
     compile project(':cbl:java-core')
 	compile project(':cbl:java-listener')
 
+    compile fileTree(dir: 'libs', include: '*.jar')
+
     // temporary workaround to enable running tests against Couchbase Lite Listener.
     // once tests are converted over to use mockwebserver, this can be ripped out.
     // see https://github.com/couchbase/couchbase-lite-android/pull/300

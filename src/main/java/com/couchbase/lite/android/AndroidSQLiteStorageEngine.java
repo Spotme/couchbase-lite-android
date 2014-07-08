@@ -16,16 +16,15 @@
 
 package com.couchbase.lite.android;
 
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteException;
-
 import com.couchbase.lite.storage.ContentValues;
-import com.couchbase.lite.storage.Cursor;
-import com.couchbase.lite.storage.SQLException;
 import com.couchbase.lite.storage.SQLiteStorageEngine;
 import com.couchbase.lite.util.Log;
 import com.couchbase.touchdb.RevCollator;
 import com.couchbase.touchdb.TDCollateJSON;
+
+import net.sqlcipher.SQLException;
+import net.sqlcipher.database.SQLiteDatabase;
+import net.sqlcipher.database.SQLiteException;
 
 import java.util.Map;
 
@@ -41,8 +40,9 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
         }
 
         try {
-            database = SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.CREATE_IF_NECESSARY);
+            database = SQLiteDatabase.openDatabase(path, "", null, SQLiteDatabase.CREATE_IF_NECESSARY);
             Log.v(Log.TAG_DATABASE, "%s: Opened Android sqlite db", this);
+
             TDCollateJSON.registerCustomCollators(database);
             RevCollator.register(database);
         } catch(SQLiteException e) {
@@ -92,8 +92,8 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
     public void execSQL(String sql) throws SQLException {
         try {
             database.execSQL(sql);
-        } catch (android.database.SQLException e) {
-            throw new SQLException(e);
+        } catch (net.sqlcipher.SQLException e) {
+            throw new SQLException(e.getMessage());
         }
     }
 
@@ -101,13 +101,13 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
     public void execSQL(String sql, Object[] bindArgs) throws SQLException {
         try {
             database.execSQL(sql, bindArgs);
-        } catch (android.database.SQLException e) {
-            throw new SQLException(e);
+        } catch (net.sqlcipher.SQLException e) {
+            throw new SQLException(e.getMessage());
         }
     }
 
     @Override
-    public Cursor rawQuery(String sql, String[] selectionArgs) {
+    public com.couchbase.lite.storage.Cursor rawQuery(String sql, String[] selectionArgs) {
         return new SQLiteCursorWrapper(database.rawQuery(sql, selectionArgs));
     }
 
@@ -166,10 +166,10 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
         return contentValues;
     }
 
-    private class SQLiteCursorWrapper implements Cursor {
-        private android.database.Cursor delegate;
+    private class SQLiteCursorWrapper implements com.couchbase.lite.storage.Cursor {
+        private net.sqlcipher.Cursor delegate;
 
-        public SQLiteCursorWrapper(android.database.Cursor delegate) {
+        public SQLiteCursorWrapper(net.sqlcipher.Cursor delegate) {
             this.delegate = delegate;
         }
 

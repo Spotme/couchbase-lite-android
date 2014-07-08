@@ -1,9 +1,10 @@
 package com.couchbase.touchdb;
 
-import java.text.Collator;
-
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Build;
+
+import net.sqlcipher.database.SQLiteDatabase;
+
+import java.text.Collator;
 
 public class TDCollateJSON {
 

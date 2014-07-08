@@ -1,7 +1,8 @@
 package com.couchbase.touchdb;
 
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Build;
+
+import net.sqlcipher.database.SQLiteDatabase;
 
 public class RevCollator {
     public static void register(SQLiteDatabase database) {
