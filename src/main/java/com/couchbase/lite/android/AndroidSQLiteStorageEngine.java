@@ -35,12 +35,17 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
 
     @Override
     public boolean open(String path) {
+        return open(path, null);
+    }
+
+    @Override
+    public boolean open(String path, String password) {
         if(database != null && database.isOpen()) {
             return true;
         }
 
         try {
-            database = SQLiteDatabase.openDatabase(path, "", null, SQLiteDatabase.CREATE_IF_NECESSARY);
+            database = SQLiteDatabase.openDatabase(path, password, null, SQLiteDatabase.CREATE_IF_NECESSARY);
             Log.v(Log.TAG_DATABASE, "%s: Opened Android sqlite db", this);
 
             TDCollateJSON.registerCustomCollators(database);
