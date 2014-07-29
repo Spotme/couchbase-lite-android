@@ -7,6 +7,8 @@ import net.sqlcipher.database.SQLiteDatabase;
 
 import java.io.File;
 
+import dalvik.system.PathClassLoader;
+
 public class AndroidContext implements Context {
 
     private android.content.Context wrappedContext;
@@ -35,7 +37,16 @@ public class AndroidContext implements Context {
         return networkReachabilityManager;
     }
 
-    public android.content.Context getWrappedContext() {
+	@Override
+	public String getLibraryDir(String name) {
+		try {
+			return ((PathClassLoader) wrappedContext.getClassLoader()).findLibrary(name);
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
+	public android.content.Context getWrappedContext() {
         return wrappedContext;
     }
 

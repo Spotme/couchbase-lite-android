@@ -141,11 +141,12 @@ int collateRevIDs(void *context,
 }
 
 JNIEXPORT void JNICALL Java_com_couchbase_touchdb_RevCollator_nativeRegister
-  (JNIEnv *env, jclass cls, jobject sqliteDatabase, jint version) {
+  (JNIEnv *env, jclass cls, jobject sqliteDatabase, jint version, jstring libPath) {
 	int (*sqlite3_create_collation)(sqlite3*,const char *,int,void *,int (*)(void*, int, const void*, int, const void*)) = NULL;
 
 	//void* handle = dlopen("/system/lib/libsqlite.so", RTLD_LAZY);
-    void* handle = dlopen("/data/app-lib/com.spotme.android-1/libsqlcipher_android.so", RTLD_LAZY);
+	const char* path = env->GetStringUTFChars(libPath,0);
+    void* handle = dlopen(path, RTLD_LAZY);
     LOGE("handle %p\n", handle);
 
 	*(void **)(&sqlite3_create_collation) = dlsym(handle, "sqlite3_create_collation");

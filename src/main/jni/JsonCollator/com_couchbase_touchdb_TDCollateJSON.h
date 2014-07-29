@@ -13,7 +13,7 @@ extern "C" {
  * Signature: (Landroid/database/sqlite/SQLiteDatabase;)V
  */
 JNIEXPORT void JNICALL Java_com_couchbase_touchdb_TDCollateJSON_nativeRegisterCustomCollators
-  (JNIEnv *, jclass, jobject, jint);
+  (JNIEnv *, jclass, jobject, jint, jstring);
 
 /*
  * Class:     com_couchbase_touchdb_TDCollateJSON

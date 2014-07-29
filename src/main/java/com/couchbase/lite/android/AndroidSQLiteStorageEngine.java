@@ -16,6 +16,7 @@
 
 package com.couchbase.lite.android;
 
+import com.couchbase.lite.Context;
 import com.couchbase.lite.storage.ContentValues;
 import com.couchbase.lite.storage.SQLiteStorageEngine;
 import com.couchbase.lite.util.Log;
@@ -34,12 +35,12 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
     private SQLiteDatabase database;
 
     @Override
-    public boolean open(String path) {
+    public boolean open(String path, Context ctx) {
         return open(path, null);
     }
 
     @Override
-    public boolean open(String path, String password) {
+    public boolean open(String path, Context ctx, String password) {
         if(database != null && database.isOpen()) {
             return true;
         }
@@ -48,8 +49,10 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
             database = SQLiteDatabase.openDatabase(path, password, null, SQLiteDatabase.CREATE_IF_NECESSARY);
             Log.v(Log.TAG_DATABASE, "%s: Opened Android sqlite db", this);
 
-            TDCollateJSON.registerCustomCollators(database);
-            RevCollator.register(database);
+	        final String libPath = ctx.getLibraryDir("sqlcipher_android");
+
+            TDCollateJSON.registerCustomCollators(database, libPath);
+            RevCollator.register(database, libPath);
         } catch(SQLiteException e) {
             Log.e(TAG, "Error opening", e);
 

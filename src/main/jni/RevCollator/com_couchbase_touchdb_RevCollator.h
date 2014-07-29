@@ -13,7 +13,7 @@ extern "C" {
  * Signature: (Landroid/database/sqlite/SQLiteDatabase;I)V
  */
 JNIEXPORT void JNICALL Java_com_couchbase_touchdb_RevCollator_nativeRegister
-  (JNIEnv *, jclass, jobject, jint);
+  (JNIEnv *, jclass, jobject, jint, jstring);
 
 /*
  * Class:     com_couchbase_touchdb_RevCollator
