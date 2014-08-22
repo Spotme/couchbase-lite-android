@@ -10,12 +10,12 @@ import com.couchbase.lite.router.Router;
 import com.couchbase.lite.storage.Cursor;
 import com.couchbase.lite.support.FileDirUtils;
 import com.couchbase.lite.util.Log;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import junit.framework.Assert;
 
 import org.apache.commons.io.IOUtils;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.type.TypeReference;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;

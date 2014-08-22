@@ -41,26 +41,9 @@ public class LiteTestContext extends LiteTestContextBase implements Context {
         return filesDir;
     }
 
-    @Override
-    public void setNetworkReachabilityManager(NetworkReachabilityManager networkReachabilityManager) {
-
-    }
-
-    @Override
-    public NetworkReachabilityManager getNetworkReachabilityManager() {
-        return new TestNetworkReachabilityManager();
-    }
-
-    class TestNetworkReachabilityManager extends NetworkReachabilityManager {
-        @Override
-        public void startListening() {
-
-        }
-
-        @Override
-        public void stopListening() {
-
-        }
-    }
+	@Override
+	public String getLibraryDir(String libName) {
+		return null;
+	}
 
 }
