@@ -2360,27 +2360,6 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    private void putReplicationOnline(Replication replication) throws InterruptedException {
-
-        final CountDownLatch wentOnline = new CountDownLatch(1);
-        Replication.ChangeListener onlineChangeListener = new Replication.ChangeListener() {
-            @Override
-            public void changed(Replication.ChangeEvent event) {
-                if (event.getSource().online) {
-                    wentOnline.countDown();
-                }
-            }
-        };
-        replication.addChangeListener(onlineChangeListener);
-
-        replication.goOnline();
-        boolean succeeded = wentOnline.await(30, TimeUnit.SECONDS);
-        assertTrue(succeeded);
-
-        replication.removeChangeListener(onlineChangeListener);
-
-    }
-
     /**
      * https://github.com/couchbase/couchbase-lite-android/issues/243
      */
