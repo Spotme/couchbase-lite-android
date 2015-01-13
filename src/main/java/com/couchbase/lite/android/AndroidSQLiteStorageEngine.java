@@ -25,6 +25,7 @@ import com.couchbase.touchdb.TDCollateJSON;
 
 import net.sqlcipher.SQLException;
 import net.sqlcipher.database.SQLiteDatabase;
+import net.sqlcipher.database.SQLiteDatabaseHook;
 import net.sqlcipher.database.SQLiteException;
 
 import java.util.Map;
@@ -46,7 +47,14 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
         }
 
         try {
-            database = SQLiteDatabase.openDatabase(path, password, null, SQLiteDatabase.CREATE_IF_NECESSARY);
+			SQLiteDatabaseHook hook = new SQLiteDatabaseHook(){
+				public void preKey(SQLiteDatabase database){}
+				public void postKey(SQLiteDatabase database){
+					database.rawExecSQL("PRAGMA journal_mode = WAL;");
+					database.rawExecSQL("PRAGMA synchronous = OFF;");
+				}
+			};
+			database = SQLiteDatabase.openDatabase(path, password, null, SQLiteDatabase.CREATE_IF_NECESSARY, hook);
             Log.v(Log.TAG_DATABASE, "%s: Opened Android sqlite db", this);
 
 	        final String libPath = ctx.getLibraryDir("sqlcipher_android");
