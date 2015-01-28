@@ -1,6 +1,7 @@
 package com.couchbase.lite.android;
 
 import com.couchbase.lite.Context;
+import com.couchbase.lite.storage.SQLiteStorageEngineFactory;
 
 import net.sqlcipher.database.SQLiteDatabase;
 
@@ -29,6 +30,11 @@ public class AndroidContext implements Context {
 		} catch (Exception e) {
 			return null;
 		}
+	}
+
+	@Override
+	public SQLiteStorageEngineFactory getSQLiteStorageEngineFactory() {
+		return new AndroidSQLiteStorageEngineFactory();
 	}
 
 	public android.content.Context getWrappedContext() {
