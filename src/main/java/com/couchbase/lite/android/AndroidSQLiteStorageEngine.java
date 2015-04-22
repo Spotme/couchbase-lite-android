@@ -17,6 +17,7 @@
 package com.couchbase.lite.android;
 
 import com.couchbase.lite.Context;
+import com.couchbase.lite.CorruptedDbException;
 import com.couchbase.lite.storage.ContentValues;
 import com.couchbase.lite.storage.SQLiteStorageEngine;
 import com.couchbase.lite.util.Log;
@@ -108,6 +109,8 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
     public void execSQL(String sql) throws SQLException {
         try {
             database.execSQL(sql);
+        } catch (net.sqlcipher.database.SQLiteDatabaseCorruptException e) {
+            throw new CorruptedDbException(e.getMessage());
         } catch (net.sqlcipher.SQLException e) {
             throw new SQLException(e.getMessage());
         }
@@ -117,6 +120,8 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
     public void execSQL(String sql, Object[] bindArgs) throws SQLException {
         try {
             database.execSQL(sql, bindArgs);
+        } catch (net.sqlcipher.database.SQLiteDatabaseCorruptException e) {
+            throw new CorruptedDbException(e.getMessage());
         } catch (net.sqlcipher.SQLException e) {
             throw new SQLException(e.getMessage());
         }
