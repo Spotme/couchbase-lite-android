@@ -147,7 +147,7 @@ JNIEXPORT void JNICALL Java_com_couchbase_touchdb_RevCollator_nativeRegister
 	//void* handle = dlopen("/system/lib/libsqlite.so", RTLD_LAZY);
 	const char* path = env->GetStringUTFChars(libPath,0);
     void* handle = dlopen(path, RTLD_LAZY);
-    LOGE("handle %p\n", handle);
+    LOGV("handle %p\n", handle);
 
 	*(void **)(&sqlite3_create_collation) = dlsym(handle, "sqlite3_create_collation");
 	if(!sqlite3_create_collation) {

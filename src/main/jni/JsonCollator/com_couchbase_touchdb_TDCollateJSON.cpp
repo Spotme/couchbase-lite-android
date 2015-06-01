@@ -113,6 +113,24 @@ static int dcmp(double n1, double n2) {
 	return diff > 0.0 ? 1 : (diff < 0.0 ? -1 : 0);
 }
 
+// Maps an ASCII character to its relative priority in the Unicode collation sequence.
+static uint8_t kCharPriority[128];
+// Same thing but case-insensitive.
+static uint8_t kCharPriorityCaseInsensitive[128];
+
+static void initializeCharPriorityMap(void) {
+    static const char* const kInverseMap = "\t\n\r `^_-,;:!?.'\"()[]{}@*/\\&#%+<=>|~$0123456789aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ";
+    uint8_t priority = 1;
+    for (unsigned i=0; i<strlen(kInverseMap); i++)
+        kCharPriority[(uint8_t)kInverseMap[i]] = priority++;
+
+    // This table gives lowercase letters the same priority as uppercase:
+    memcpy(kCharPriorityCaseInsensitive, kCharPriority, sizeof(kCharPriority));
+    for (uint8_t c = 'a'; c <= 'z'; c++)
+        kCharPriorityCaseInsensitive[c] = kCharPriority[toupper(c)];
+}
+
+
 // Types of values, ordered according to CouchDB collation order (see view_collation.js tests)
 typedef enum {
 	kEndArray,
@@ -163,6 +181,7 @@ static ValueType valueTypeOf(char c) {
 		return kIllegal;
 	}
 }
+
 
 /**
  * Defining my own digittoint because Android ctype.h doesn't do it for me
@@ -236,6 +255,54 @@ static int compareStringsASCII(const char** in1, const char** in2) {
 	return 0;
 }
 
+// Unicode collation, but fails (returns -2) if non-ASCII characters are found.
+// Basic rule is to compare case-insensitively, but if the strings compare equal, let the one that's
+// higher case-sensitively win (where uppercase is _greater_ than lowercase, unlike in ASCII.)
+static int compareStringsUnicodeFast(const char** in1, const char** in2) {
+    const char* str1 = *in1, *str2 = *in2;
+    int resultIfEqual = 0;
+    while(true) {
+        char c1 = *++str1;
+        char c2 = *++str2;
+
+        // If one string ends, the other is greater; if both end, they're equal:
+        if (c1 == '"') {
+            if (c2 == '"')
+                break;
+            else
+                return -1;
+        } else if (c2 == '"')
+            return 1;
+
+        // Handle escape sequences:
+        if (c1 == '\\')
+            c1 = convertEscape(&str1);
+        if (c2 == '\\')
+            c2 = convertEscape(&str2);
+
+        if ((c1 & 0x80) || (c2 & 0x80))
+            return -2; // fail: I only handle ASCII
+
+        // Compare the next characters, according to case-insensitive Unicode character priority:
+        int s = cmp(kCharPriorityCaseInsensitive[(uint8_t)c1],
+                    kCharPriorityCaseInsensitive[(uint8_t)c2]);
+        if (s)
+            return s;
+
+        // Remember case-sensitive result too
+        if (resultIfEqual == 0 && c1 != c2)
+            resultIfEqual = cmp(kCharPriority[(uint8_t)c1], kCharPriority[(uint8_t)c2]);
+    }
+
+    if (resultIfEqual)
+        return resultIfEqual;
+
+    // Strings are equal, so update the positions:
+    *in1 = str1 + 1;
+    *in2 = str2 + 1;
+    return 0;
+}
+
 static jstring createJavaStringFromJSON(const char** in) {
 	// Scan the JSON string to find its end and whether it contains escapes:
 	const char* start = ++*in;
@@ -280,11 +347,14 @@ static jstring createJavaStringFromJSON(const char** in) {
 }
 
 static int compareStringsUnicode(const char** in1, const char** in2) {
+    int result = compareStringsUnicodeFast(in1, in2);
+    if (result > -2)
+        return result;
+    // Fast compare failed, so resort to using NSString:
 	jstring str1 = createJavaStringFromJSON(in1);
 	jstring str2 = createJavaStringFromJSON(in2);
 	JNIEnv *env = getEnv();
-	int result = env->CallStaticIntMethod(TDCollateJSONClass, compareMethod,
-			str1, str2);
+	result = env->CallStaticIntMethod(TDCollateJSONClass, compareMethod, str1, str2);
 	env->DeleteLocalRef(str1);
 	env->DeleteLocalRef(str2);
 	return result;
@@ -315,8 +385,14 @@ static double readNumber(const char* start, const char* end, char** endOfNumber)
  WARNING: This function *only* works on valid JSON with no whitespace.
  If called on non-JSON strings it is quite likely to crash! */
 
-int TDCollateJSON(void *context, int len1, const void * chars1, int len2,
-		const void * chars2) {
+int TDCollateJSON(void *context, int len1, const void * chars1, int len2, const void * chars2) {
+
+    static bool charPriorityMapInitialized = false;
+    if(!charPriorityMapInitialized){
+        initializeCharPriorityMap();
+        charPriorityMapInitialized = true;
+    }
+
 	const char* str1 = (const char*) chars1;
 	const char* str2 = (const char*) chars2;
 	int depth = 0;
@@ -417,91 +493,18 @@ JNIEXPORT void JNICALL Java_com_couchbase_touchdb_TDCollateJSON_nativeRegisterCu
 	//jclass clazz = env->FindClass("android/database/sqlite/SQLiteDatabase");
 	jclass clazz = env->FindClass("net/sqlcipher/database/SQLiteDatabase");
 	if (clazz == NULL) {
-		//LOGE("Can't find android/database/sqlite/SQLiteDatabase\n");
 		LOGE("Can't find net/sqlcipher/database/SQLiteDatabase\n");
 		return;
 	}
 
 	// find the field holding the handl
 	sqlite3 * sqliteHandle;
-	//if(version < 16) {
-		jfieldID offset_db_handle = env->GetFieldID(clazz, "mNativeHandle", "I");
-		if (offset_db_handle == NULL) {
-			LOGE("Can't find SQLiteDatabase.mNativeHandle\n");
-			return;
-		}
-		sqliteHandle = (sqlite3 *)env->GetIntField(sqliteDatabase, offset_db_handle);
-//	} else {
-//		jfieldID offset_tl = env->GetFieldID(clazz, "mThreadSession", "Ljava/lang/ThreadLocal;");
-//		if(offset_tl == NULL) {
-//			LOGE("Can't find SQLiteDatabae.mThreadSession\n");
-//			return;
-//		}
-//		jobject tl = env->GetObjectField(sqliteDatabase, offset_tl);
-//
-//		jclass tl_clazz = env->FindClass("java/lang/ThreadLocal");
-//		if (tl_clazz == NULL) {
-//			LOGE("Can't find java/lang/ThreadLocal\n");
-//			return;
-//		}
-//
-//		jmethodID get_mid = env->GetMethodID(tl_clazz, "get", "()Ljava/lang/Object;");
-//		if (get_mid == NULL) {
-//		     LOGE("Can't find ThreadLocal.get\n");
-//		     return;
-//		}
-//		jobject session = env->CallObjectMethod(tl, get_mid);
-//
-//		jclass sqls_clazz = env->FindClass("android/database/sqlite/SQLiteSession");
-//		if (sqls_clazz == NULL) {
-//			LOGE("Can't find android/database/sqlite/SQLiteSession\n");
-//			return;
-//		}
-//
-//		jfieldID offset_mConnectionPool = env->GetFieldID(sqls_clazz, "mConnectionPool", "Landroid/database/sqlite/SQLiteConnectionPool;");
-//		if(offset_mConnectionPool == NULL) {
-//			LOGE("Can't find SQLiteSession.mConnectionPool");
-//			return;
-//		}
-//		jobject mcp = env->GetObjectField(session, offset_mConnectionPool);
-//		if(mcp == NULL) {
-//			LOGE("mConnectionPool was NULL");
-//			return;
-//		}
-//
-//		jclass sqlcp_clazz = env->FindClass("android/database/sqlite/SQLiteConnectionPool");
-//		if (sqlcp_clazz == NULL) {
-//			LOGE("Can't find android/database/sqlite/SQLiteConnectionPool\n");
-//			return;
-//		}
-//
-//		jfieldID offset_mMainConnection = env->GetFieldID(sqlcp_clazz, "mAvailablePrimaryConnection", "Landroid/database/sqlite/SQLiteConnection;");
-//		if(offset_mMainConnection == NULL) {
-//			LOGE("Can't find SQLiteConnectionPool.mAvailablePrimaryConnection");
-//			return;
-//		}
-//
-//		jobject mc = env->GetObjectField(mcp, offset_mMainConnection);
-//
-//		jclass sqlc_clazz = env->FindClass("android/database/sqlite/SQLiteConnection");
-//		if (sqlc_clazz == NULL) {
-//			LOGE("Can't find android/database/sqlite/SQLiteConnection\n");
-//			return;
-//		}
-//
-//		jfieldID offset_db_handle = env->GetFieldID(sqlc_clazz, "mConnectionPtr", "I");
-//		if(offset_db_handle == NULL) {
-//			LOGE("Can't find SQLiteConnection.mConnectionPtr");
-//			return;
-//		}
-//
-//		jint connectionPtr = env->GetIntField(mc, offset_db_handle);
-//
-//		SQLiteConnection* connection = reinterpret_cast<SQLiteConnection*>(connectionPtr);
-//
-//		sqliteHandle = connection->db;
-//	}
-
+	jfieldID offset_db_handle = env->GetFieldID(clazz, "mNativeHandle", "I");
+    if (offset_db_handle == NULL) {
+        LOGE("Can't find SQLiteDatabase.mNativeHandle\n");
+        return;
+    }
+    sqliteHandle = (sqlite3 *)env->GetIntField(sqliteDatabase, offset_db_handle);
 
 
 	// get the native handle
