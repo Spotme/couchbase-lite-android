@@ -25,6 +25,7 @@ import com.couchbase.touchdb.TDCollateJSON;
 
 import net.sqlcipher.SQLException;
 import net.sqlcipher.database.SQLiteDatabase;
+import net.sqlcipher.database.SQLiteDatabaseCorruptException;
 import net.sqlcipher.database.SQLiteDatabaseHook;
 import net.sqlcipher.database.SQLiteException;
 
@@ -108,6 +109,9 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
     public void execSQL(String sql) throws SQLException {
         try {
             database.execSQL(sql);
+        } catch (SQLiteDatabaseCorruptException e) {
+            reInitIndexes();
+            throw new SQLiteDatabaseCorruptException(e.getMessage());
         } catch (net.sqlcipher.SQLException e) {
             throw new SQLException(e.getMessage());
         }
@@ -117,6 +121,9 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
     public void execSQL(String sql, Object[] bindArgs) throws SQLException {
         try {
             database.execSQL(sql, bindArgs);
+        } catch (SQLiteDatabaseCorruptException e) {
+            reInitIndexes();
+            throw new SQLException(e.getMessage());
         } catch (net.sqlcipher.SQLException e) {
             throw new SQLException(e.getMessage());
         }
@@ -191,37 +198,79 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
 
         @Override
         public boolean moveToNext() {
-            return delegate.moveToNext();
+            try {
+                return delegate.moveToNext();
+            } catch (SQLiteDatabaseCorruptException e) {
+                reInitIndexes();
+            }
+            return false;
         }
 
         @Override
         public boolean isAfterLast() {
-            return delegate.isAfterLast();
+            try {
+                return delegate.isAfterLast();
+            } catch (SQLiteDatabaseCorruptException e) {
+                reInitIndexes();
+            }
+            return false;
         }
 
         @Override
         public String getString(int columnIndex) {
-            return delegate.getString(columnIndex);
+            try {
+                return delegate.getString(columnIndex);
+            } catch (SQLiteDatabaseCorruptException e) {
+                reInitIndexes();
+            }
+            return "";
         }
 
         @Override
         public int getInt(int columnIndex) {
-            return delegate.getInt(columnIndex);
+            try {
+                return delegate.getInt(columnIndex);
+            } catch (SQLiteDatabaseCorruptException e) {
+                reInitIndexes();
+            }
+            return 0;
         }
 
         @Override
         public long getLong(int columnIndex) {
-            return delegate.getLong(columnIndex);
+            try {
+                return delegate.getLong(columnIndex);
+            } catch (SQLiteDatabaseCorruptException e) {
+                reInitIndexes();
+            }
+            return 0;
         }
 
         @Override
         public byte[] getBlob(int columnIndex) {
-            return delegate.getBlob(columnIndex);
+            try {
+                return delegate.getBlob(columnIndex);
+            } catch (SQLiteDatabaseCorruptException e) {
+                reInitIndexes();
+            }
+            return new byte[]{};
         }
 
         @Override
         public void close() {
-            delegate.close();
+            try {
+                delegate.close();
+            } catch (SQLiteDatabaseCorruptException e) {
+                reInitIndexes();
+            }
         }
+    }
+
+    /**
+     * The old pre-calculated db generator could produce corrupted db
+     * this fixes the wrong indexes in these dbs
+     */
+    private void reInitIndexes() {
+        database.execSQL("REINDEX maps_keys;");
     }
 }
