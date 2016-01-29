@@ -67,8 +67,11 @@ dependencies {
     // instrumentTestCompile is used rather than compile.
     androidTestCompile 'commons-io:commons-io:2.0.1'
 
-    compile project(':cbl:java-core')
-	compile project(':cbl:java-listener')
+	compile(project(':cbl:java-listener')) {
+        //Android contains internal version of following:
+        exclude group: 'commons-logging'
+        exclude group: 'org.apache.httpcomponents'
+    }
 
     compile fileTree(dir: 'libs', include: '*.jar')
 
