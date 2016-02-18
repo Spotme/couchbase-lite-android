@@ -62,11 +62,6 @@ android {
 def buildAndroidWithArtifacts = System.getProperty("buildAndroidWithArtifacts")
 
 dependencies {
-
-    // this library is only needed by test code (95% certain), and therefore
-    // instrumentTestCompile is used rather than compile.
-    androidTestCompile 'commons-io:commons-io:2.0.1'
-
 	compile(project(':cbl:java-listener')) {
         //Android contains internal version of following:
         exclude group: 'commons-logging'
@@ -78,7 +73,15 @@ dependencies {
     // temporary workaround to enable running tests against Couchbase Lite Listener.
     // once tests are converted over to use mockwebserver, this can be ripped out.
     // see https://github.com/couchbase/couchbase-lite-android/pull/300
-    androidTestCompile project(':cbl:java-listener')
+    androidTestCompile(project(':cbl:java-listener')) {
+        //Android contains internal version of following:
+        exclude group: 'commons-logging'
+        exclude group: 'org.apache.httpcomponents'
+    }
 
     androidTestCompile 'com.squareup.okhttp:mockwebserver:1.2.1'
+    
+    // this library is only needed by test code (95% certain), and therefore
+    // instrumentTestCompile is used rather than compile.
+    androidTestCompile 'commons-io:commons-io:2.0.1'
 }
