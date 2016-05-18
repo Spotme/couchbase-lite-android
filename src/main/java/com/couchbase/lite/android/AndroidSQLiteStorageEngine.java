@@ -58,7 +58,7 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
 			database = SQLiteDatabase.openDatabase(path, password, null, SQLiteDatabase.CREATE_IF_NECESSARY, hook);
             Log.v(Log.TAG_DATABASE, "%s: Opened Android sqlite db", this);
 
-	        final String libPath = ctx.getLibraryDir("sqlcipher_android");
+	        final String libPath = ctx.getLibraryDir("sqlcipher");
 
             TDCollateJSON.registerCustomCollators(database, libPath);
             RevCollator.register(database, libPath);
