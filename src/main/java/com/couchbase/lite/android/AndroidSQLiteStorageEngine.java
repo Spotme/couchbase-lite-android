@@ -37,12 +37,12 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
     private SQLiteDatabase database;
 
     @Override
-    public boolean open(String path, Context ctx) {
+    public boolean open(String path, Context ctx) throws SQLException {
         return open(path, null);
     }
 
     @Override
-    public boolean open(String path, Context ctx, String password) {
+    public boolean open(String path, Context ctx, String password) throws SQLException {
         if(database != null && database.isOpen()) {
             return true;
         }
@@ -69,7 +69,7 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
                 database.close();
             }
 
-            return false;
+            throw e;
         }
 
         return database.isOpen();
