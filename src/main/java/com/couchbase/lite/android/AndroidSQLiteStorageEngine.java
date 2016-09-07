@@ -18,12 +18,12 @@ package com.couchbase.lite.android;
 
 import com.couchbase.lite.Context;
 import com.couchbase.lite.storage.ContentValues;
+import com.couchbase.lite.storage.SQLException;
 import com.couchbase.lite.storage.SQLiteStorageEngine;
 import com.couchbase.lite.util.Log;
 import com.couchbase.touchdb.RevCollator;
 import com.couchbase.touchdb.TDCollateJSON;
 
-import net.sqlcipher.SQLException;
 import net.sqlcipher.database.SQLiteDatabase;
 import net.sqlcipher.database.SQLiteDatabaseCorruptException;
 import net.sqlcipher.database.SQLiteDatabaseHook;
@@ -34,10 +34,15 @@ import java.util.Map;
 public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
     public static final String TAG = "AndroidSQLiteStorageEngine";
 
+    /**
+     * Sqlcipher db, which throws sqlcipher Exceptions.
+     * They always must be wrapped in couchbase Exceptions, when thrown out of this class.
+     */
     private SQLiteDatabase database;
 
     @Override
     public boolean open(String path, Context ctx) throws SQLException {
+        //todo: fix endless recursion
         return open(path, null);
     }
 
@@ -69,7 +74,7 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
                 database.close();
             }
 
-            throw e;
+            throw new SQLException(e);
         }
 
         return database.isOpen();
