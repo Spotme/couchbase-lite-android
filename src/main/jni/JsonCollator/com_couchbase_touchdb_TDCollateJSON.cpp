@@ -480,14 +480,12 @@ JNIEXPORT void JNICALL Java_com_couchbase_touchdb_TDCollateJSON_nativeRegisterCu
 	//void* handle = dlopen("/system/lib/libsqlite.so", RTLD_LAZY);
 	const char* path = env->GetStringUTFChars(libPath, 0);
 	void* handle = dlopen(path, RTLD_LAZY);
-	LOGV("handle %p\n", handle);
 
 	*(void **)(&sqlite3_create_collation) = dlsym(handle, "sqlite3_create_collation");
 	if(!sqlite3_create_collation) {
-		LOGV("Failed to find sqlite3_create_collation: %s\n", dlerror());
+		LOGE("Failed to find sqlite3_create_collation: %s\n", dlerror());
 		return;
 	}
-	LOGV("found sqlite3_create_collation: %p", sqlite3_create_collation);
 
 	// find the SQLiteDatabase class
 	//jclass clazz = env->FindClass("android/database/sqlite/SQLiteDatabase");
@@ -515,15 +513,13 @@ JNIEXPORT void JNICALL Java_com_couchbase_touchdb_TDCollateJSON_nativeRegisterCu
 	int res = 0;
 	res = sqlite3_create_collation(sqliteHandle, "JSON", SQLITE_UTF8,
 			kTDCollateJSON_Unicode, TDCollateJSON);
-	LOGV("sqlite3_create_collation \"JSON\": %d", res);
 
 	res = sqlite3_create_collation(sqliteHandle, "JSON_RAW", SQLITE_UTF8,
 			kTDCollateJSON_Raw, TDCollateJSON);
-	LOGV("sqlite3_create_collation \"JSON_RAW\": %d", res);
 
 	res = sqlite3_create_collation(sqliteHandle, "JSON_ASCII", SQLITE_UTF8,
 			kTDCollateJSON_ASCII, TDCollateJSON);
-	LOGV("sqlite3_create_collation \"JSON_ASCII\": %d", res);
+
 }
 
 /**

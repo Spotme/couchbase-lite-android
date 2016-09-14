@@ -147,14 +147,12 @@ JNIEXPORT void JNICALL Java_com_couchbase_touchdb_RevCollator_nativeRegister
 	//void* handle = dlopen("/system/lib/libsqlite.so", RTLD_LAZY);
 	const char* path = env->GetStringUTFChars(libPath,0);
     void* handle = dlopen(path, RTLD_LAZY);
-    LOGV("handle %p\n", handle);
 
 	*(void **)(&sqlite3_create_collation) = dlsym(handle, "sqlite3_create_collation");
 	if(!sqlite3_create_collation) {
 		LOGE("Failed to find sqlite3_create_collation: %s", dlerror());
 		return;
 	}
-    LOGV("found sqlite3_create_collation: %p", sqlite3_create_collation);
 
 	// find the SQLiteDatabase class
 	//jclass clazz = env->FindClass("android/database/sqlite/SQLiteDatabase");
@@ -245,12 +243,9 @@ JNIEXPORT void JNICALL Java_com_couchbase_touchdb_RevCollator_nativeRegister
 	// 	sqliteHandle = connection->db;
 	// }
 
-    LOGV("SQLite3 handle is %p", sqliteHandle);
-
 	// Install a custom collator
     int res = 0;
 	sqlite3_create_collation(sqliteHandle, "REVID", SQLITE_UTF8, NULL, collateRevIDs);
-    LOGV("sqlite3_create_collation \"REVID\": %d", res);
 }
 
 JNIEXPORT jint JNICALL Java_com_couchbase_touchdb_RevCollator_testCollateRevIds
