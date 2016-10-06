@@ -1,15 +1,7 @@
 apply plugin: 'com.android.library'
 apply plugin: 'maven'
 
-buildscript {
-    repositories {
-	    mavenLocal()
-        mavenCentral()
-    }
-    dependencies {
-        classpath 'com.android.tools.build:gradle:2.1.2'
-    }
-}
+// buildscript's repositories and dependencies are removed as we use greadle version and it's repo from the parent project.
 
 repositories {
     mavenLocal()
