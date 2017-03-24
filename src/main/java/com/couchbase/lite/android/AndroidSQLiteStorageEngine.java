@@ -58,7 +58,10 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
 				public void preKey(SQLiteDatabase database){}
 				public void postKey(SQLiteDatabase database){
 					database.rawExecSQL("PRAGMA journal_mode = WAL;");
-					database.rawExecSQL("PRAGMA synchronous = OFF;");
+
+					// disable synchronous off which could produce corrupted db
+					// https://www.sqlite.org/howtocorrupt.html
+					// database.rawExecSQL("PRAGMA synchronous = OFF;");
 				}
 			};
             final DatabaseErrorHandler errorHandler = new DoNotRemoveCorruptedDbHandler();
