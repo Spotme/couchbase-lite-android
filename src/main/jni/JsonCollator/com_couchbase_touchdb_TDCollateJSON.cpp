@@ -497,12 +497,12 @@ JNIEXPORT void JNICALL Java_com_couchbase_touchdb_TDCollateJSON_nativeRegisterCu
 
 	// find the field holding the handl
 	sqlite3 * sqliteHandle;
-	jfieldID offset_db_handle = env->GetFieldID(clazz, "mNativeHandle", "I");
+	jfieldID offset_db_handle = env->GetFieldID(clazz, "mNativeHandle", "J");
     if (offset_db_handle == NULL) {
         LOGE("Can't find SQLiteDatabase.mNativeHandle\n");
         return;
     }
-    sqliteHandle = (sqlite3 *)env->GetIntField(sqliteDatabase, offset_db_handle);
+    sqliteHandle = (sqlite3 *)env->GetLongField(sqliteDatabase, offset_db_handle);
 
 
 	// get the native handle
