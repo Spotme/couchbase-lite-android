@@ -24,6 +24,7 @@ import com.couchbase.lite.util.Log;
 import com.couchbase.touchdb.RevCollator;
 import com.couchbase.touchdb.TDCollateJSON;
 
+import net.sqlcipher.DatabaseErrorHandler;
 import net.sqlcipher.database.SQLiteDatabase;
 import net.sqlcipher.database.SQLiteDatabaseCorruptException;
 import net.sqlcipher.database.SQLiteDatabaseHook;
@@ -60,7 +61,8 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
 					database.rawExecSQL("PRAGMA synchronous = OFF;");
 				}
 			};
-			database = SQLiteDatabase.openDatabase(path, password, null, SQLiteDatabase.CREATE_IF_NECESSARY, hook);
+            final DatabaseErrorHandler errorHandler = new DoNotRemoveCorruptedDbHandler();
+            database = SQLiteDatabase.openDatabase(path, password, null, SQLiteDatabase.CREATE_IF_NECESSARY, hook, errorHandler);
             Log.v(Log.TAG_DATABASE, "%s: Opened Android sqlite db", this);
 
 	        final String libPath = ctx.getLibraryDir("sqlcipher");
