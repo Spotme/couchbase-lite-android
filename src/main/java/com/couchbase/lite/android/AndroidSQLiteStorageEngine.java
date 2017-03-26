@@ -17,14 +17,15 @@
 package com.couchbase.lite.android;
 
 import com.couchbase.lite.Context;
+import com.couchbase.lite.spotme.DbCorruptionHandler;
 import com.couchbase.lite.storage.ContentValues;
 import com.couchbase.lite.storage.SQLException;
 import com.couchbase.lite.storage.SQLiteStorageEngine;
 import com.couchbase.lite.util.Log;
+import com.couchbase.spotme.DbCorruptionAdapterHandler;
 import com.couchbase.touchdb.RevCollator;
 import com.couchbase.touchdb.TDCollateJSON;
 
-import net.sqlcipher.DatabaseErrorHandler;
 import net.sqlcipher.database.SQLiteDatabase;
 import net.sqlcipher.database.SQLiteDatabaseCorruptException;
 import net.sqlcipher.database.SQLiteDatabaseHook;
@@ -40,6 +41,7 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
      * They always must be wrapped in couchbase Exceptions, when thrown out of this class.
      */
     private SQLiteDatabase database;
+    private DbCorruptionAdapterHandler dbCorruptionAdapterHandler;
 
     @Override
     public boolean open(String path, Context ctx) throws SQLException {
@@ -64,8 +66,7 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
 					// database.rawExecSQL("PRAGMA synchronous = OFF;");
 				}
 			};
-            final DatabaseErrorHandler errorHandler = new DoNotRemoveCorruptedDbHandler();
-            database = SQLiteDatabase.openDatabase(path, password, null, SQLiteDatabase.CREATE_IF_NECESSARY, hook, errorHandler);
+            database = SQLiteDatabase.openDatabase(path, password, null, SQLiteDatabase.CREATE_IF_NECESSARY, hook, dbCorruptionAdapterHandler);
             Log.v(Log.TAG_DATABASE, "%s: Opened Android sqlite db", this);
 
 	        final String libPath = ctx.getLibraryDir("sqlcipher");
@@ -168,6 +169,11 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
     public void close() {
         database.close();
         Log.v(Log.TAG_DATABASE, "%s: Closed Android sqlite db", this);
+    }
+
+    @Override
+    public void setDbCorruptionHandler(DbCorruptionHandler dbCorruptionHandler) {
+        dbCorruptionAdapterHandler = new DbCorruptionAdapterHandler(dbCorruptionHandler);
     }
 
     @Override
