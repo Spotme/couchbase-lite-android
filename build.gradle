@@ -1,7 +1,13 @@
 apply plugin: 'com.android.library'
 apply plugin: 'maven'
+apply plugin: 'com.jaredsburrows.license'
 
 // buildscript's repositories and dependencies are removed as we use greadle version and it's repo from the parent project.
+
+licenseReport {
+    copyHtmlReportToAssets = false
+    copyJsonReportToAssets = false
+}
 
 repositories {
     mavenLocal()
